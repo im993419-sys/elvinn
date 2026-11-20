@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>💌 Ada pesan rahasia buat kamu</title>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--pink:#ff6fb5;--ink:#2a1245;--butter:#ffe66d;--sky:#7fd8ff;--milk:#fff8ef;--grape:#b79bff}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--pink);background-image:radial-gradient(var(--ink) 1.4px,transparent 1.6px);background-size:26px 26px;background-blend-mode:soft-light;color:var(--ink);font:800 16px/1.55 Nunito,system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+.fl{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.fl span{position:absolute;font-size:30px;animation:bob 8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-22px) rotate(14deg)}}
+canvas{position:fixed;inset:0;pointer-events:none;z-index:60}
+.scene{display:none;position:relative;z-index:2;min-height:100vh;max-width:460px;margin:0 auto;padding:max(26px,env(safe-area-inset-top)) 18px max(30px,env(safe-area-inset-bottom));flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:20px}
+.scene.on{display:flex;animation:pop .55s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(34px) scale(.92)}}
+h1,h2{font-family:'Bagel Fat One',system-ui,sans-serif;font-weight:400;line-height:1;color:var(--milk);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:4px 5px 0 var(--ink)}
+h1{font-size:clamp(46px,15vw,70px);transform:rotate(-3deg)}
+h2{font-size:clamp(32px,10vw,44px)}
+.card{background:var(--milk);border:3px solid var(--ink);border-radius:22px;box-shadow:6px 7px 0 var(--ink);padding:18px;width:100%}
+.btn{font:inherit;font-weight:800;font-size:17px;background:var(--butter);color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:13px 24px;box-shadow:4px 5px 0 var(--ink);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.btn:active{transform:translate(4px,5px);box-shadow:0 0 0 var(--ink)}
+.btn.alt{background:var(--sky)}
+.btn:disabled{opacity:.6;pointer-events:none}
+.row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:62px}
+.sticker{display:inline-block;background:var(--butter);border:3px solid var(--ink);border-radius:14px;padding:6px 18px;font:400 clamp(28px,9vw,40px)/1.1 'Bagel Fat One',system-ui;box-shadow:4px 5px 0 var(--ink);transform:rotate(2.5deg)}
+.big{font-size:92px;line-height:1;animation:shake 1.4s infinite}
+@keyframes shake{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}85%{transform:rotate(-8deg)}}
+.note{color:var(--milk);text-shadow:1px 2px 0 var(--ink);font-size:17px}
+/* notif */
+.notif{display:flex;gap:12px;text-align:left;align-items:center}
+.av{flex:none;width:52px;height:52px;border-radius:16px;background:var(--grape);border:3px solid var(--ink);display:grid;place-items:center;font-size:26px}
+.notif small{opacity:.65;font-weight:600}
+/* chat */
+#s2{justify-content:flex-start;align-items:stretch;text-align:left;gap:14px}
+.head{position:sticky;top:10px;z-index:5;display:flex;gap:12px;align-items:center;padding:10px 14px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#39d98a;margin-right:5px}
+#chat{display:flex;flex-direction:column;gap:12px;padding-bottom:8px}
+.bub{max-width:88%;background:var(--milk);border:3px solid var(--ink);border-radius:20px 20px 20px 4px;padding:12px 16px;box-shadow:4px 4px 0 var(--ink);animation:pop .4s cubic-bezier(.2,1.5,.4,1);white-space:pre-line}
+.bub img{width:100%;border-radius:12px;display:block}
+.typing{display:flex;gap:6px;padding:16px 18px}
+.typing i{width:9px;height:9px;border-radius:50%;background:var(--ink);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{transform:translateY(-6px);opacity:.4}}
+.dock{display:flex;justify-content:center;padding:6px 0}
+/* cake */
+svg{width:min(260px,70vw);overflow:visible}
+.flame{transform-origin:center bottom;animation:fk .5s infinite alternate;transform-box:fill-box}
+@keyframes fk{to{transform:scale(1.15,.9) rotate(4deg)}}
+.off .flame{display:none}
+.hide{display:none!important}
+#mu{position:fixed;right:14px;top:max(14px,env(safe-area-inset-top));z-index:70;width:48px;height:48px;padding:0;font-size:20px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="fl" id="fl"></div>
+<canvas id="cf"></canvas>
+<button class="btn alt hide" id="mu" aria-label="Musik">🔇</button>
+
+<!-- 0: notifikasi -->
+<section class="scene on" id="s0">
+  <div class="note">Hp kamu baru aja bunyi…</div>
+  <div class="card notif">
+    <div class="av">💌</div>
+    <div><small><span data-dari></span> • sekarang</small><br>1 pesan baru buat elvinn <b data-nama></b><br><small>“”</small></div>
+  </div>
+  <button class="btn" id="b0">Buka pesannya 👀</button>
+</section>
+
+<!-- 1: kado + HBD -->
+<section class="scene" id="s1">
+  <div id="gift" style="display:contents">
+    <div class="big">🎁</div>
+    <h2>Eh, ada kado nih buat kamu</h2>
+    <button class="btn" id="b1">Buka kado 🎀</button>
+  </div>
+  <div id="hbd" class="hide" style="display:none;flex-direction:column;align-items:center;gap:20px">
+    <h1>Happy Birthday!</h1>
+    <div class="sticker" data-nama></div>
+    <p class="note">Ada surat panjang dari <b data-dari></b>. Baca sampai habis ya?</p>
+    <div class="row" id="r1">
+      <button class="btn" id="yes1">Siap dong 😤</button>
+      <button class="btn alt" id="no1">ngga ah 🙄</button>
+    </div>
+  </div>
+</section>
+
+<!-- 2: chat -->
+<section class="scene" id="s2">
+  <div class="card head">
+    <div class="av">🥹</div>
+    <div><b data-dari></b><br><small><span class="dot"></span>lagi ngetik buat kamu</small></div>
+  </div>
+  <div id="chat"></div>
+  <div class="dock"><button class="btn" id="more">Lanjut 👉</button></div>
+</section>
+
+<!-- 3: kue -->
+<section class="scene" id="s3">
+  <h2>Make a wish dulu, <span data-nama></span></h2>
+  <svg viewBox="0 0 200 190" id="cake" aria-label="Kue ulang tahun">
+    <ellipse cx="100" cy="178" rx="92" ry="9" fill="#2a1245"/>
+    <g stroke="#2a1245" stroke-width="4" stroke-linejoin="round">
+      <rect x="22" y="112" width="156" height="60" rx="14" fill="#fff8ef"/>
+      <rect x="40" y="72" width="120" height="44" rx="12" fill="#ffe66d"/>
+      <path d="M40 90q10 14 20 0t20 0 20 0 20 0 20 0 20 0v-6a12 12 0 0 0-12-12H52a12 12 0 0 0-12 12z" fill="#7fd8ff"/>
+      <rect x="76" y="44" width="9" height="28" fill="#ff6fb5"/><rect x="96" y="44" width="9" height="28" fill="#b79bff"/><rect x="116" y="44" width="9" height="28" fill="#ff6fb5"/>
+    </g>
+    <g class="flames">
+      <path class="flame" d="M80 40c-7-9 0-17 0-24 7 7 7 15 0 24z" fill="#ffb02e" stroke="#2a1245" stroke-width="3"/>
+      <path class="flame" d="M100 40c-7-9 0-17 0-24 7 7 7 15 0 24z" fill="#ffb02e" stroke="#2a1245" stroke-width="3"/>
+      <path class="flame" d="M120 40c-7-9 0-17 0-24 7 7 7 15 0 24z" fill="#ffb02e" stroke="#2a1245" stroke-width="3"/>
+    </g>
+  </svg>
+  <p class="note" id="t3">Pejamin mata, minta yang bagus-bagus, terus tiup.</p>
+  <button class="btn" id="b3">Tiup lilin 🌬️</button>
+</section>
+
+<!-- 4: pertanyaan -->
+<section class="scene" id="s4">
+  <div class="card" id="ask" style="display:flex;flex-direction:column;gap:16px;align-items:center">
+    <div style="font-size:19px">Satu pertanyaan terakhir, <span data-nama></span>…<br>Boleh ngga aku jadi orang pertama yang ngucapin ulang tahun ke kamu, tiap tahun?</div>
+    <div class="row" id="r4">
+      <button class="btn" id="yes4">Boleh banget 💖</button>
+      <button class="btn alt" id="no4">ngga ✋</button>
+    </div>
+  </div>
+  <div class="card hide" id="fin" style="display:none;flex-direction:column;gap:14px;align-items:center">
+    <div class="big" style="animation:none">🥳</div>
+    <h2 style="font-size:36px">YEAY!</h2>
+    <p>Selamat ulang tahun Elvin sayangku, aku sayang kamu 🤍</p>
+    <button class="btn alt" id="again">Ulangi dari awal 🔁</button>
+  </div>
+</section>
+
+<script>
+/* ====== EDIT BAGIAN INI ====== */
+const CFG = {
+  nama: "Sayangku",    // nama yang ulang tahun (atau pakai link ?nama=Rina)
+  dari: "Aku",         // nama pengirim (atau ?dari=Budi)
+  foto: "",            // link/base64 foto kenangan (kosongkan kalau tidak ada)
+  musik: ""            // link file mp3 (kosongkan kalau tidak ada)
+};
+const MSG = [
+`hai sayang, selamat ulang tahunn ya cintaa.`,
+`selamat ulang tahun yaa,elvinkuu sayangg 🎉 Hari ini aku resmiin jadi hari libur yg versi aku sendiri.`,
+`jujur ya, ucapan ini aku ketik ulang berkali-kali. Awalnya cuma “met ultah ya”, tapi kok rasanya kurang buat orang sepenting kamu. Jadi aku bikin panjang, maaf kalau jempolmu pegel 🥲. `,
+`makasi ya udah hadir di hidup aku, ada kamu tu hampir hari hari aku berwarna. sehat sehat ya botak, aku sayang kamuu.`,
+`kamu tuh bikin hari-hariku jadi lebih berwarnaa. Liat nama kamu muncul di notif aja aku udah senyum sendiri. Keliatan aneh sih, tapi biarin.`,
+`di umur baru ini aku ngga minta banyak banyak, semoga kamu sehat, tidurnya cukup, rejekinya lancar, dan orang orang sekitarmu baik semua. Kalau ada yang ngga baik, bilang aku biar aku yang maju yaa sayang. `,
+`semoga kamu makin sayang sama diri sendiri. Kamu ngga harus kuat terus kok. capek ya istirahat, sedih ya cerita,jangan lupa cerita nya ke aku ya sayangg.`,
+`kalau suatu hari dunia lagi berat, kabarin aku ya sayang, cerita ke aku, anggap aku rumah kamu. Keluh kesah kamu aku dengarin, kita sama sama saling terbuka ya sayangg. Intinya aku sayang kamu elvinn, iloveyou. `,
+`aku ngga janji jadi yang paling sempurna. Tapi aku janji bakal jadi yang paling heboh ngerayain kamu, yang pertama bilang “kamu pasti bisa”, dan yang terakhir nyerah soal kamu. Intinya, aku sayang kamu, elvinnku. aku sayang banget Lebih dari nasi padang porsi jumbo, lebih dari tidur siang pas hujan 🤍`,
+`sekarang tiup lilin dulu yuk, abis itu ada satu kejutan kecil. Jangan di-skip ya 🥺`
+];
+/* ============================= */
+
+const $ = s => document.querySelector(s);
+const q = new URLSearchParams(location.search);
+CFG.nama = q.get("nama") || CFG.nama;
+CFG.dari = q.get("dari") || CFG.dari;
+const fmt = t => t.replace(/{nama}/g, CFG.nama).replace(/{dari}/g, CFG.dari);
+document.querySelectorAll("[data-nama]").forEach(e => e.textContent = CFG.nama);
+document.querySelectorAll("[data-dari]").forEach(e => e.textContent = CFG.dari);
+const go = id => { document.querySelectorAll(".scene").forEach(s => s.classList.remove("on")); $("#" + id).classList.add("on"); scrollTo(0, 0); };
+
+/* emoji melayang */
+$("#fl").innerHTML = ["💗","✨","🎈","🧸","🍰","🎀","💌","🫶"].map((e, i) =>
+  `<span style="left:${(i * 13 + 5) % 95}%;top:${(i * 29 + 8) % 90}%;animation-delay:${-i}s;opacity:.55">${e}</span>`).join("");
+
+/* konfeti */
+const cv = $("#cf"), cx = cv.getContext("2d"); let P = [], run = false;
+const fit = () => { cv.width = innerWidth; cv.height = innerHeight; }; fit(); addEventListener("resize", fit);
+function boom(x = innerWidth / 2, y = innerHeight / 2.2, n = 130) {
+  const c = ["#ff6fb5","#ffe66d","#7fd8ff","#b79bff","#fff8ef","#2a1245"];
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 4 + Math.random() * 9;
+    P.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 6, r: 4 + Math.random() * 5, c: c[i % 6], t: Math.random() * 6, l: 110 + Math.random() * 60 }); }
+  if (!run) { run = true; tick(); }
+}
+function tick() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  P = P.filter(p => p.l-- > 0);
+  P.forEach(p => { p.vy += .25; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.t += .2;
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.t); cx.fillStyle = p.c; cx.globalAlpha = Math.min(1, p.l / 30);
+    cx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); cx.restore(); });
+  if (P.length) requestAnimationFrame(tick); else { run = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+/* tombol yang kabur */
+function runaway(btn, lines, giveUp, done) {
+  let n = 0, ok = false;
+  const flee = e => {
+    if (n >= lines.length) return;
+    e.preventDefault(); n++;
+    if (n >= lines.length) {
+      btn.textContent = giveUp; btn.style.cssText = ""; setTimeout(() => ok = true, 700); return;
+    }
+    btn.textContent = lines[n - 1]; btn.style.position = "fixed"; btn.style.zIndex = 40;
+    btn.style.left = Math.random() * (innerWidth - btn.offsetWidth - 20) + 10 + "px";
+    btn.style.top = Math.random() * (innerHeight - btn.offsetHeight - 20) + 10 + "px";
+  };
+  btn.addEventListener("pointerenter", flee);
+  btn.addEventListener("pointerdown", flee);
+  btn.addEventListener("click", () => { if (ok) done(); });
+}
+
+/* musik opsional */
+if (CFG.musik) {
+  const a = new Audio(CFG.musik), m = $("#mu"); a.loop = true; m.classList.remove("hide");
+  m.onclick = () => a.paused ? (a.play(), m.textContent = "🔊") : (a.pause(), m.textContent = "🔇");
+}
+
+/* alur */
+$("#b0").onclick = () => go("s1");
+$("#b1").onclick = () => {
+  $("#gift").style.display = "none"; const h = $("#hbd"); h.classList.remove("hide"); h.style.display = "flex"; boom();
+  setTimeout(() => boom(innerWidth * .2, innerHeight * .5, 60), 350);
+  setTimeout(() => boom(innerWidth * .8, innerHeight * .5, 60), 600);
+};
+const startChat = () => { go("s2"); $("#chat").innerHTML = ""; i = 0; $("#more").textContent = "Lanjut 👉"; $("#more").onclick = next; next(); };
+$("#yes1").onclick = startChat;
+runaway($("#no1"), ["Eh jangan gitu 🥺", "Yakin nih?", "Aku ngetiknya lama lho", "Tombolnya aja nolak 😭", "Dikit lagi…"], "Yaudah iya 😮‍💨", startChat);
+
+let i = 0;
+function next() {
+  const btn = $("#more"), chat = $("#chat"); btn.disabled = true;
+  const ty = document.createElement("div"); ty.className = "bub typing"; ty.innerHTML = "<i></i><i></i><i></i>";
+  chat.append(ty); ty.scrollIntoView({ behavior: "smooth", block: "center" });
+  const t = fmt(MSG[i]);
+  setTimeout(() => {
+    ty.remove();
+    if (i === 3 && CFG.foto) { const f = document.createElement("div"); f.className = "bub"; f.innerHTML = `<img alt="Foto kenangan" src="${CFG.foto}">`; chat.append(f); }
+    const b = document.createElement("div"); b.className = "bub"; b.textContent = t; chat.append(b);
+    if (i === 1) boom(innerWidth / 2, innerHeight * .4, 80);
+    i++;
+    if (i >= MSG.length) { btn.textContent = "Tiup lilin yuk 🎂"; btn.onclick = () => go("s3"); }
+    else btn.textContent = ["Lanjut 👉", "Terus? 👀", "Lagi dong 🥹", "Ih manis banget 🫠"][i % 4];
+    btn.disabled = false; btn.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, Math.min(600 + t.length * 9, 2000));
+}
+
+$("#b3").onclick = () => {
+  $("#cake").classList.add("off"); boom(innerWidth / 2, innerHeight * .45, 160);
+  $("#t3").textContent = "Wish kamu udah didengerin semesta ✨ aku juga ikut aamiin-in";
+  $("#b3").textContent = "Ada satu lagi 💌"; $("#b3").onclick = () => go("s4");
+};
+
+/* pertanyaan terakhir */
+const yes4 = () => { $("#ask").style.display = "none"; const f = $("#fin"); f.classList.remove("hide"); f.style.display = "flex"; f.scrollIntoView({ behavior: "smooth" }); boom(); setTimeout(() => boom(innerWidth * .15, innerHeight * .4, 90), 300); setTimeout(() => boom(innerWidth * .85, innerHeight * .4, 90), 600); };
+$("#yes4").onclick = yes4;
+runaway($("#no4"), ["Coba pikir lagi deh 🥺", "Serius nolak?", "Hatiku retak nih 💔", "Tega banget sih…", "Satu kesempatan lagi!"], "Iya deh, boleh 🥹", yes4);
+$("#again").onclick = () => location.reload();
+</script>
+</body>
+</html>
